@@ -8,9 +8,74 @@
 3) Реалізувати допоміжний клас для роботи з власною базою даних.
 4) Написати звіт.
 
-Приклад роботи з базою даних:
+**Пояснення.**
 
-[LocalDatabase.java](Android/app/src/main/java/ua/lpnu/android/LocalDatabase.java)
+Зазвичай, роботу з даними додатку виділяють в окремий клас, щоб відділити логіку роботи з даними від специфіки збереження. У прикладі [LocalDatabase.java](Android/app/src/main/java/ua/lpnu/android/LocalDatabase.java) реалізовано збереження даних у локальниій реляційній базі додатку.
+
+Клас `LocalDatabase` похідний від класу `SQLiteOpenHelper`, який допомагає реалізувати роботу з базою даних.
+
+Конструктор класу `LocalDatabase(Context context)` викликає конструктор базового класу і передає назву бази і версію:
+```java
+    LocalDatabase(Context context)
+    {
+        super(context, DATABASE_NAME, null, DATABASE_VERSION);
+    }
+ ```
+
+Якщо бази немає, базовий клас створить базу і викличе перевизначений метод `onCreate` для ініціалізації новоствореної бази:
+```java
+    void onCreate(SQLiteDatabase db) {...}
+```
+
+Якщо база є, але версія не співпадає, базовий клас викличе перевизначений метод `onUpgrade` для виконання операцій, які оновлять структуру старої бази до нової:
+```java
+    void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion)
+```
+
+Метод додавання дового запису в базу `addItem` використовує функцію `getWritableDatabase()`, щоб отримати тимчасовий доступ до бази на запис.
+
+```java
+    public long addItem(String item_name)
+    {
+        ContentValues values = new ContentValues();
+        values.put(ITEM_NAME_COL, item_name);
+        return getWritableDatabase().insert(ITEM_TABLE, null, values);
+    }
+```
+
+Через те, що у методі `onCreate` доступ до бази вже отримано, а вдруге заблокувати базу для запису заборонено, реалізовано ще один варіант `long addItem(SQLiteDatabase db, String item_name)`, який використовує вже отриманий об'єкт для запису в базу даних.
+
+```java
+    public long addItem(SQLiteDatabase db, String item_name)
+    {
+        ContentValues values = new ContentValues();
+        values.put(ITEM_NAME_COL, item_name);
+        return db.insert(ITEM_TABLE, null, values);
+    }
+ ```
+ 
+Цей метод використано в `onCreate`:
+
+```java
+    public void onCreate(SQLiteDatabase db)
+    {
+        db.execSQL(ITEMS_TABLE_CREATE_SQL);
+
+        for(int i=0;i<100;++i)
+        {
+            addItem(db, "DatabaseItem" + i);
+        }
+    }
+ ```
+ 
+Для того, щоб не формувати SQL запити вручну (що може призвести до проблем зі стрічками, які містять спеціальні символи), використано 2 різні підходи - `ContentValues` у `addItem` і запит зі знаком '?' у `deleteItem`:
+
+```java
+    public void deleteItem(String item_name)
+    {
+        getWritableDatabase().delete(ITEM_TABLE, ITEM_NAME_COL + " = ?", new String[] {item_name});
+    }
+ ```
 
 ## Трохи теорії
 
