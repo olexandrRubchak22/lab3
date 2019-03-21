@@ -9,7 +9,8 @@
 4) Написати звіт.
 
 Приклад роботи з базою даних:
-Android/AndroidLocalDatabase/app/src/main/java/ua/lpnu/testshop/LocalDatabase.java
+
+[LocalDatabase.java](Android/app/src/main/java/ua/lpnu/android/LocalDatabase.java)
 
 ## Трохи теорії
 
